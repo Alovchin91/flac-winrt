@@ -48,7 +48,7 @@ class FlacDecoder
     private libFLAC.Decoder.Callbacks.StreamDecoderWriteStatus WriteCallback(
         libFLAC.Format.Frame frame, libFLAC.Decoder.Callbacks.StreamDecoderWriteBuffer buffer)
     {
-        this._currentSample = buffer.GetBuffer();
+        _currentSample = buffer.GetBuffer();
         return StreamDecoderWriteStatus.Continue;
     }
     
