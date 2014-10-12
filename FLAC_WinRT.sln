@@ -1,0 +1,58 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30723.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libFLAC_static", "src\libFLAC\libFLAC_static.vcxproj", "{4CEFBC84-C215-11DB-8314-0800200C9A66}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "win_utf8_io", "src\win_utf8_io\win_utf8_io.vcxproj", "{4CEFBE02-C215-11DB-8314-0800200C9A66}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libogg_static", "src\libogg\libogg_static.vcxproj", "{15CBFEFF-7965-41F5-B4E2-21E8795C9159}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libFLAC_runtime", "src\libFLAC_winrt\libFLAC_winrt.vcxproj", "{84FB1EA7-621C-4466-B640-5C122EA001C8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ARM = Debug|ARM
+		Debug|Win32 = Debug|Win32
+		Release|ARM = Release|ARM
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4CEFBC84-C215-11DB-8314-0800200C9A66}.Debug|ARM.ActiveCfg = Debug|ARM
+		{4CEFBC84-C215-11DB-8314-0800200C9A66}.Debug|ARM.Build.0 = Debug|ARM
+		{4CEFBC84-C215-11DB-8314-0800200C9A66}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4CEFBC84-C215-11DB-8314-0800200C9A66}.Debug|Win32.Build.0 = Debug|Win32
+		{4CEFBC84-C215-11DB-8314-0800200C9A66}.Release|ARM.ActiveCfg = Release|ARM
+		{4CEFBC84-C215-11DB-8314-0800200C9A66}.Release|ARM.Build.0 = Release|ARM
+		{4CEFBC84-C215-11DB-8314-0800200C9A66}.Release|Win32.ActiveCfg = Release|Win32
+		{4CEFBC84-C215-11DB-8314-0800200C9A66}.Release|Win32.Build.0 = Release|Win32
+		{4CEFBE02-C215-11DB-8314-0800200C9A66}.Debug|ARM.ActiveCfg = Debug|ARM
+		{4CEFBE02-C215-11DB-8314-0800200C9A66}.Debug|ARM.Build.0 = Debug|ARM
+		{4CEFBE02-C215-11DB-8314-0800200C9A66}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4CEFBE02-C215-11DB-8314-0800200C9A66}.Debug|Win32.Build.0 = Debug|Win32
+		{4CEFBE02-C215-11DB-8314-0800200C9A66}.Release|ARM.ActiveCfg = Release|ARM
+		{4CEFBE02-C215-11DB-8314-0800200C9A66}.Release|ARM.Build.0 = Release|ARM
+		{4CEFBE02-C215-11DB-8314-0800200C9A66}.Release|Win32.ActiveCfg = Release|Win32
+		{4CEFBE02-C215-11DB-8314-0800200C9A66}.Release|Win32.Build.0 = Release|Win32
+		{15CBFEFF-7965-41F5-B4E2-21E8795C9159}.Debug|ARM.ActiveCfg = Debug|ARM
+		{15CBFEFF-7965-41F5-B4E2-21E8795C9159}.Debug|ARM.Build.0 = Debug|ARM
+		{15CBFEFF-7965-41F5-B4E2-21E8795C9159}.Debug|Win32.ActiveCfg = Debug|Win32
+		{15CBFEFF-7965-41F5-B4E2-21E8795C9159}.Debug|Win32.Build.0 = Debug|Win32
+		{15CBFEFF-7965-41F5-B4E2-21E8795C9159}.Release|ARM.ActiveCfg = Release|ARM
+		{15CBFEFF-7965-41F5-B4E2-21E8795C9159}.Release|ARM.Build.0 = Release|ARM
+		{15CBFEFF-7965-41F5-B4E2-21E8795C9159}.Release|Win32.ActiveCfg = Release|Win32
+		{15CBFEFF-7965-41F5-B4E2-21E8795C9159}.Release|Win32.Build.0 = Release|Win32
+		{84FB1EA7-621C-4466-B640-5C122EA001C8}.Debug|ARM.ActiveCfg = Debug|ARM
+		{84FB1EA7-621C-4466-B640-5C122EA001C8}.Debug|ARM.Build.0 = Debug|ARM
+		{84FB1EA7-621C-4466-B640-5C122EA001C8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{84FB1EA7-621C-4466-B640-5C122EA001C8}.Debug|Win32.Build.0 = Debug|Win32
+		{84FB1EA7-621C-4466-B640-5C122EA001C8}.Release|ARM.ActiveCfg = Release|ARM
+		{84FB1EA7-621C-4466-B640-5C122EA001C8}.Release|ARM.Build.0 = Release|ARM
+		{84FB1EA7-621C-4466-B640-5C122EA001C8}.Release|Win32.ActiveCfg = Release|Win32
+		{84FB1EA7-621C-4466-B640-5C122EA001C8}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
