@@ -39,6 +39,12 @@ class FlacDecoder
         }
     }
     
+    public IBuffer GetSample()
+    {
+        // Note: FLAC API is synchronous
+        return _streamDecoder.ProcessSingle() ? _currentSample : (_currentSample = null);
+    }
+    
     private libFLAC.Decoder.Callbacks.StreamDecoderWriteStatus WriteCallback(
         libFLAC.Format.Frame frame, libFLAC.Decoder.Callbacks.StreamDecoderWriteBuffer buffer)
     {
