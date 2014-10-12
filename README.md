@@ -4,12 +4,16 @@ FLAC for Windows Runtime
 
 Current FLAC for Windows Runtime exposes only a decoder as this is what most developers would need in a Windows Store app. But as far as Windows Runtime matures and becomes a technology that is used in desktop development as well, FLAC for Windows Runtime will also update and add necessary functionality.
 
+Example usage
+===
+Coming soon
+
 How to build
 ===
 **flac-winrt** includes all the necessary source code to build the libraries. FLAC for Windows Runtime solution includes original libFLAC and its dependencies, including libogg, and also contains libFLAC_winrt project that is the main output of this project.
 
 You will need Visual Studio 2012 to build the library for Windows (Phone) 8.0, and Visual Studio 2013 or higher to build for Windows (Phone) 8.1 or higher.
 
-Example usage
+Branches
 ===
 Coming soon
