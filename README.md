@@ -65,4 +65,4 @@ class FlacDecoder
 
 **flac-winrt** includes all the necessary source code to build the libraries. FLAC for Windows Runtime solution includes original libFLAC and its dependencies, including [libogg](http://downloads.xiph.org/releases/ogg/), and contains libFLAC_winrt project that is the main output of the solution.
 
-You will need Visual Studio 2013 or higher to build the library for Windows (Phone) 8.1 or higher.
+You will need Visual Studio 2013 or higher to build the library for Windows (Phone) 8.1 or higher. All the projects currently are set up to build for Windows Phone 8.1, but it's easy to retarget them for Windows 8.1 or higher.
