@@ -9,7 +9,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "win_utf8_io", "src\win_utf8
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libogg_static", "src\libogg\libogg_static.vcxproj", "{15CBFEFF-7965-41F5-B4E2-21E8795C9159}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libFLAC_runtime", "src\libFLAC_winrt\libFLAC_winrt.vcxproj", "{84FB1EA7-621C-4466-B640-5C122EA001C8}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libFLAC_winrt", "src\libFLAC_winrt\libFLAC_winrt.vcxproj", "{84FB1EA7-621C-4466-B640-5C122EA001C8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
