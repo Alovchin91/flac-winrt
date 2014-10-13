@@ -2,7 +2,7 @@
 
 ## Contribute to the project
 
-Thank for your interest in FLAC for Windows Runtime project!
+Thank you for your interest in FLAC for Windows Runtime project!
 
 If you want to contribute to the project, please review these simple guidelines to make contribution process as easy and nice as possible :)
 
