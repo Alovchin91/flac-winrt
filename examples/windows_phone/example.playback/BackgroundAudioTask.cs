@@ -29,26 +29,19 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-using System.Collections.Generic;
 using System.Linq;
 using Windows.ApplicationModel.Background;
 using Windows.Foundation.Collections;
 using Windows.Media;
 using Windows.Media.Playback;
+using FLAC_WinRT.Example.Streaming;
 
-namespace FLAC_WinRT.Example.Task
+namespace FLAC_WinRT.Example.Playback
 {
     public sealed class BackgroundAudioTask : IBackgroundTask
     {
         private BackgroundTaskDeferral _taskDeferral;
         private SystemMediaTransportControls _mediaTransportControls;
-        private readonly List<string> _trackList;
-        //private MediaSourceAdapter _mediaSourceAdapter;
-
-        public BackgroundAudioTask()
-        {
-            this._trackList = new List<string>();
-        }
 
         public void Run(IBackgroundTaskInstance taskInstance)
         {
@@ -69,32 +62,25 @@ namespace FLAC_WinRT.Example.Task
             BackgroundMediaPlayer.Current.CurrentStateChanged += this.OnCurrentStateChanged;
             BackgroundMediaPlayer.MessageReceivedFromForeground += this.OnMessageReceivedFromForeground;
 
-            BackgroundMediaPlayer.SendMessageToForeground(new ValueSet { { "BackgroundPlayerStarted", null } });
+            BackgroundMediaPlayer.SendMessageToForeground(new ValueSet {{"BackgroundPlayerStarted", null}});
 
             this._taskDeferral = taskInstance.GetDeferral();
         }
 
-        private void OnMessageReceivedFromForeground(object sender, MediaPlayerDataReceivedEventArgs e)
+        private async void OnMessageReceivedFromForeground(object sender, MediaPlayerDataReceivedEventArgs e)
         {
-            foreach (var data in e.Data.Where(d => d.Value is string))
-            {
-                if (data.Key.Equals("AddTrack"))
-                {
-                    this._trackList.Add(data.Value as string);
-                }
-            }
-
-            if (!this._trackList.Any())
+            var trackList = e.Data.Where(d => d.Value is string && d.Key.Equals("AddTrack")).Select(d => (string) d.Value).ToList();
+            if (!trackList.Any())
             {
                 return;
             }
 
-            var currentState = BackgroundMediaPlayer.Current.CurrentState;
+            MediaPlayerState currentState = BackgroundMediaPlayer.Current.CurrentState;
             if (currentState == MediaPlayerState.Closed || currentState == MediaPlayerState.Stopped)
             {
-                var firstTrack = this._trackList.First();
-                //this._mediaSourceAdapter = MediaSourceFactory.Create(firstTrack);
-                //BackgroundMediaPlayer.Current.SetMediaSource(this._mediaSourceAdapter.MediaSource);
+                var firstTrack = trackList.First();
+                var mediaSourceAdapter = await FlacMediaSourceAdapter.CreateAsync(firstTrack);
+                BackgroundMediaPlayer.Current.SetMediaSource(mediaSourceAdapter.MediaSource);
             }
         }
 

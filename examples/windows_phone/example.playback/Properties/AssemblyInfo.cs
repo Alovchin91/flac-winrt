@@ -32,7 +32,7 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-[assembly: AssemblyTitle("example.task")]
+[assembly: AssemblyTitle("example.playback")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Alovchin91")]

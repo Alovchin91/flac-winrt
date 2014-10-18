@@ -21,7 +21,7 @@
         </m3:DefaultTile>
       </m3:VisualElements>
       <Extensions>
-        <Extension Category="windows.backgroundTasks" EntryPoint="FLAC_WinRT.Example.Task.BackgroundAudioTask">
+        <Extension Category="windows.backgroundTasks" EntryPoint="FLAC_WinRT.Example.Playback.BackgroundAudioTask">
           <BackgroundTasks>
             <Task Type="audio" />
           </BackgroundTasks>
