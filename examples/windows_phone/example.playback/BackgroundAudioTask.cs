@@ -42,6 +42,7 @@ namespace FLAC_WinRT.Example.Playback
     {
         private BackgroundTaskDeferral _taskDeferral;
         private SystemMediaTransportControls _mediaTransportControls;
+        private FlacMediaSourceAdapter _currentMediaSourceAdapter;
 
         public void Run(IBackgroundTaskInstance taskInstance)
         {
@@ -74,14 +75,10 @@ namespace FLAC_WinRT.Example.Playback
             {
                 return;
             }
-
-            MediaPlayerState currentState = BackgroundMediaPlayer.Current.CurrentState;
-            if (currentState == MediaPlayerState.Closed || currentState == MediaPlayerState.Stopped)
-            {
-                var firstTrack = trackList.First();
-                var mediaSourceAdapter = await FlacMediaSourceAdapter.CreateAsync(firstTrack);
-                BackgroundMediaPlayer.Current.SetMediaSource(mediaSourceAdapter.MediaSource);
-            }
+            
+            var firstTrack = trackList.First();
+            this._currentMediaSourceAdapter = await FlacMediaSourceAdapter.CreateAsync(firstTrack);
+            BackgroundMediaPlayer.Current.SetMediaSource(this._currentMediaSourceAdapter.MediaSource);
         }
 
         private void OnCurrentStateChanged(MediaPlayer sender, object args)

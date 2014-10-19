@@ -4,8 +4,11 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:i="using:Microsoft.Xaml.Interactivity"
+    xmlns:ic="using:Microsoft.Xaml.Interactions.Core"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    DataContext="{Binding ViewModel, RelativeSource={RelativeSource Self}}">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -19,7 +22,25 @@
         </StackPanel>
         
         <Grid Grid.Row="1" Margin="24,0">
-            
+            <ListBox ItemsSource="{Binding SongsCollection}" Background="Transparent" SelectedItem="{Binding SelectedSong, Mode=TwoWay}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding DisplayName}" Padding="0,6" Style="{StaticResource ListViewItemTextBlockStyle}" />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
         </Grid>
     </Grid>
+
+    <i:Interaction.Behaviors>
+        <ic:EventTriggerBehavior EventName="Loaded">
+            <ic:InvokeCommandAction Command="{Binding UpdateSongsListCommand}" />
+        </ic:EventTriggerBehavior>
+    </i:Interaction.Behaviors>
+    
+    <Page.BottomAppBar>
+        <CommandBar>
+            <AppBarButton Icon="Play" Label="play selected" Command="{Binding PlaySelectedSongCommand}" />
+        </CommandBar>
+    </Page.BottomAppBar>
 </Page>

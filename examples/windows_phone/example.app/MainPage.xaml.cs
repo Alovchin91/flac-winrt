@@ -30,16 +30,24 @@
  */
 
 using Windows.UI.Xaml.Navigation;
+using FLAC_WinRT.Example.App.ViewModels;
 
 namespace FLAC_WinRT.Example.App
 {
     public sealed partial class MainPage
     {
+        private MainViewModel _viewModel;
+
         public MainPage()
         {
             this.InitializeComponent();
 
             this.NavigationCacheMode = NavigationCacheMode.Required;
+        }
+
+        public MainViewModel ViewModel
+        {
+            get { return _viewModel ?? (_viewModel = new MainViewModel()); }
         }
     }
 }

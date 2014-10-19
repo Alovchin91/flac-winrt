@@ -48,7 +48,7 @@ namespace FLAC_WinRT.Example.Streaming
 
         private FlacWaveInputStream _waveStream;
 
-        private TimeSpan _currentTime;
+        private double _currentTime;
 
         private ConcurrentQueue<IBuffer> _buffersQueue;
 
@@ -63,7 +63,6 @@ namespace FLAC_WinRT.Example.Streaming
         private FlacMediaSourceAdapter(IRandomAccessStream fileStream)
         {
             this._buffersQueue = new ConcurrentQueue<IBuffer>();
-            this._currentTime = TimeSpan.Zero;
 
             this._waveStream = new FlacWaveInputStream(fileStream);
             var streamInfo = this._waveStream.GetStreamInfo();
@@ -96,7 +95,7 @@ namespace FLAC_WinRT.Example.Streaming
             sender.CanSeek = true;
             sender.BufferTime = TimeSpan.Zero;
 
-            e.Request.SetActualStartPosition(this._currentTime);
+            e.Request.SetActualStartPosition(TimeSpan.FromSeconds(this._currentTime));
 
             deferral.Complete();
         }
@@ -111,20 +110,20 @@ namespace FLAC_WinRT.Example.Streaming
             MediaStreamSample sample;
             if (buffer.Length > 0)
             {
-                sample = MediaStreamSample.CreateFromBuffer(buffer, this._currentTime);
+                sample = MediaStreamSample.CreateFromBuffer(buffer, TimeSpan.FromSeconds(this._currentTime));
                 sample.Processed += this.OnSampleProcessed;
 
                 var duration = this._waveStream.GetDurationFromBufferSize(buffer.Length);
                 sample.Duration = TimeSpan.FromSeconds(duration);
 
-                this._currentTime += sample.Duration;
+                this._currentTime += duration;
                 sender.BufferTime = sample.Duration;
             }
             else
             {
                 sample = null;
 
-                this._currentTime = TimeSpan.Zero;
+                this._currentTime = 0.0;
                 this._waveStream.Seek(0);
             }
 
@@ -149,7 +148,7 @@ namespace FLAC_WinRT.Example.Streaming
 
         private void OnMediaSourceClosed(MediaStreamSource sender, MediaStreamSourceClosedEventArgs e)
         {
-            this._currentTime = TimeSpan.Zero;
+            this._currentTime = 0.0;
             this._waveStream.Finish();
             this.RaiseStreamComplete();
         }

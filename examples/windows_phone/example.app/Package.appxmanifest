@@ -29,4 +29,7 @@
       </Extensions>
     </Application>
   </Applications>
+  <Capabilities>
+    <Capability Name="musicLibrary" />
+  </Capabilities>
 </Package>
