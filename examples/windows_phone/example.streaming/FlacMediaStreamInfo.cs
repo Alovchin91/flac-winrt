@@ -36,12 +36,11 @@ namespace FLAC_WinRT.Example.Streaming
     /// </summary>
     public sealed class FlacMediaStreamInfo
     {
-        public FlacMediaStreamInfo(double duration, long bytesPerSec, long streamLength,
+        public FlacMediaStreamInfo(double duration, long bytesPerSec,
             uint bitsPerSample, uint sampleRate, uint channelCount)
         {
             this.Duration = duration;
             this.BytesPerSecond = bytesPerSec;
-            this.StreamLength = streamLength;
             this.BitsPerSample = bitsPerSample;
             this.SampleRate = sampleRate;
             this.ChannelCount = channelCount;
@@ -56,11 +55,6 @@ namespace FLAC_WinRT.Example.Streaming
         /// Get an average bytes per second rate.
         /// </summary>
         public long BytesPerSecond { get; private set; }
-
-        /// <summary>
-        /// Get an audio stream length.
-        /// </summary>
-        public long StreamLength { get; private set; }
 
         /// <summary>
         /// Gets bits per sample rate.

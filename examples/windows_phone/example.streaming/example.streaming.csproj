@@ -67,7 +67,6 @@
     <Compile Include="FlacMediaStreamInfo.cs" />
     <Compile Include="FlacMediaSourceAdapter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="FlacWaveInputStream.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="libFLAC" Condition="'$(Platform)' == 'ARM'">

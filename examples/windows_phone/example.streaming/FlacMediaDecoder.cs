@@ -31,18 +31,21 @@
 
 using System;
 using System.IO;
+using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Storage.Streams;
 using libFLAC.Decoder;
 using libFLAC.Decoder.Callbacks;
 using libFLAC.Format;
-using libFLAC.Format.Metadata;
+using Buffer = Windows.Storage.Streams.Buffer;
 
 namespace FLAC_WinRT.Example.Streaming
 {
     public sealed class FlacMediaDecoder
     {
+        private static readonly BufferSegment _noCurrentData = new BufferSegment(new Buffer(0));
+
         private readonly StreamDecoder _streamDecoder;
-        private IBuffer _currentSample;
+        private BufferSegment _currentData;
 
         private IRandomAccessStream _fileStream;
 
@@ -54,6 +57,7 @@ namespace FLAC_WinRT.Example.Streaming
             this._streamDecoder = new StreamDecoder();
             this._streamDecoder.WriteCallback += this.WriteCallback;
             this._streamDecoder.MetadataCallback += this.MetadataCallback;
+            this._currentData = _noCurrentData;
         }
 
         public ulong Position
@@ -93,13 +97,55 @@ namespace FLAC_WinRT.Example.Streaming
             return this._streamInfo;
         }
 
-        public IBuffer GetSample()
+        public IBuffer ReadSample(IBuffer buffer, uint count)
         {
-            this._currentSample = null;
+            if (buffer == null)
+                throw new ArgumentNullException();
+
+            if (count > buffer.Capacity)
+                throw new ArgumentOutOfRangeException();
+
+            if (this._currentData.Count >= count)
+            {
+                this._currentData.Buffer.CopyTo(this._currentData.Offset, buffer, 0, count);
+                this._currentData = new BufferSegment(this._currentData.Buffer,
+                    this._currentData.Offset + count, this._currentData.Count - count);
+                buffer.Length = count;
+                return buffer;
+            }
+
+            uint read = this._currentData.Count;
+            if (read > 0)
+                this._currentData.Buffer.CopyTo(this._currentData.Offset, buffer, 0, this._currentData.Count);
+            this._currentData = _noCurrentData;
+
+            while (this.RequestSample())
+            {
+                uint rest = count - read;
+                if (this._currentData.Count >= rest)
+                {
+                    this._currentData.Buffer.CopyTo(0, buffer, read, rest);
+                    read += rest;
+                    this._currentData = new BufferSegment(this._currentData.Buffer, rest, this._currentData.Count - rest);
+                    break;
+                }
+                this._currentData.Buffer.CopyTo(0, buffer, read, this._currentData.Count);
+                read += this._currentData.Count;
+            }
+
+            buffer.Length = read;
+            return buffer;
+        }
+
+        private bool RequestSample()
+        {
+            this.EnsureMetadataRead();
+
             bool result = this._streamDecoder.ProcessSingle();
             if (!result)
-                this._currentSample = null;
-            return this._currentSample;
+                this._currentData = _noCurrentData;
+
+            return this._currentData.Count > 0;
         }
 
         public void Seek(ulong position)
@@ -138,7 +184,8 @@ namespace FLAC_WinRT.Example.Streaming
 
         private StreamDecoderWriteStatus WriteCallback(Frame frame, StreamDecoderWriteBuffer buffer)
         {
-            this._currentSample = buffer.GetBuffer();
+            IBuffer currentSample = buffer.GetBuffer();
+            this._currentData = new BufferSegment(currentSample);
             return StreamDecoderWriteStatus.Continue;
         }
 
@@ -149,27 +196,42 @@ namespace FLAC_WinRT.Example.Streaming
                 uint blockAlign = metadata.StreamInfo.Channels*(metadata.StreamInfo.BitsPerSample/8);
                 uint avgBytesPerSec = metadata.StreamInfo.SampleRate*blockAlign;
 
-                long streamLength = GetWaveStreamLength(metadata.StreamInfo);
                 double duration = (double) metadata.StreamInfo.TotalSamples/metadata.StreamInfo.SampleRate;
 
                 this._streamInfo = new FlacMediaStreamInfo(
-                    duration, avgBytesPerSec, streamLength,
+                    duration, avgBytesPerSec,
                     metadata.StreamInfo.BitsPerSample,
                     metadata.StreamInfo.SampleRate,
                     metadata.StreamInfo.Channels);
             }
         }
 
-        private static long GetWaveStreamLength(StreamInfo streamInfo)
+        /// <summary>
+        /// Converts specified sample's buffer size to a sample's duration.
+        /// </summary>
+        /// <param name="bufferSize">Sample's buffer size.</param>
+        /// <returns>Sample's duration.</returns>
+        /// <exception cref="EndOfStreamException">This stream contains no data.</exception>
+        public double GetDurationFromBufferSize(uint bufferSize)
         {
-            const int dataChunkOffset = 36;
-            const int waveHeaderSize = dataChunkOffset + 8;
+            FlacMediaStreamInfo streamInfo = this.GetStreamInfo();
 
-            long bytesPerInterChannelSample = (streamInfo.Channels*streamInfo.BitsPerSample) >> 3;
-            long dataLength = (long) streamInfo.TotalSamples*bytesPerInterChannelSample;
-            long totalStreamLength = dataLength + waveHeaderSize;
+            if (streamInfo.BytesPerSecond == 0)
+                return 0;
 
-            return totalStreamLength;
+            return (double) bufferSize/streamInfo.BytesPerSecond;
+        }
+
+        /// <summary>
+        /// Converts specified sample's duration to a sample's buffer size.
+        /// </summary>
+        /// <param name="duration">Sample's duration.</param>
+        /// <returns>Sample's buffer size.</returns>
+        /// <exception cref="System.IO.EndOfStreamException">This stream contains no data.</exception>
+        public uint GetBufferSizeFromDuration(double duration)
+        {
+            FlacMediaStreamInfo streamInfo = this.GetStreamInfo();
+            return (uint) (duration*streamInfo.BytesPerSecond);
         }
     }
 }

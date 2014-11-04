@@ -42,11 +42,11 @@ namespace FLAC_WinRT.Example.Streaming
 {
     public sealed class FlacMediaSourceAdapter : IDisposable
     {
-        private readonly MediaStreamSource _mediaSource;
+        private MediaStreamSource _mediaSource;
 
         private const int SAMPLE_BUFFER_SIZE = 2048;
 
-        private FlacWaveInputStream _waveStream;
+        private FlacMediaDecoder _mediaDecoder;
 
         private double _currentTime;
 
@@ -57,18 +57,22 @@ namespace FLAC_WinRT.Example.Streaming
             var storageFile = await StorageFile.GetFileFromPathAsync(filePath);
             var fileStream = await storageFile.OpenAsync(FileAccessMode.Read);
 
-            var adapter = new FlacMediaSourceAdapter(fileStream);
-            adapter.Initialize();
+            var adapter = new FlacMediaSourceAdapter();
+            adapter.Initialize(fileStream);
 
             return adapter;
         }
 
-        private FlacMediaSourceAdapter(IRandomAccessStream fileStream)
+        private FlacMediaSourceAdapter()
         {
             this._buffersQueue = new ConcurrentQueue<IBuffer>();
-
-            this._waveStream = new FlacWaveInputStream(fileStream);
-            var streamInfo = this._waveStream.GetStreamInfo();
+            this._mediaDecoder = new FlacMediaDecoder();
+        }
+        
+        private void Initialize(IRandomAccessStream fileStream)
+        {
+            this._mediaDecoder.Initialize(fileStream);
+            var streamInfo = this._mediaDecoder.GetStreamInfo();
 
             var encodingProperties = AudioEncodingProperties.CreatePcm(
                 streamInfo.SampleRate, streamInfo.ChannelCount, streamInfo.BitsPerSample);
@@ -77,6 +81,9 @@ namespace FLAC_WinRT.Example.Streaming
             this._mediaSource.Starting += this.OnMediaSourceStarting;
             this._mediaSource.SampleRequested += this.OnMediaSourceSampleRequested;
             this._mediaSource.Closed += this.OnMediaSourceClosed;
+
+            this._mediaSource.Duration = TimeSpan.FromSeconds(streamInfo.Duration);
+            this._mediaSource.BufferTime = TimeSpan.Zero;
         }
 
         public IMediaSource MediaSource
@@ -84,24 +91,15 @@ namespace FLAC_WinRT.Example.Streaming
             get { return this._mediaSource; }
         }
 
-        private void Initialize()
-        {
-            var streamInfo = this._waveStream.GetStreamInfo();
-            this._mediaSource.Duration = TimeSpan.FromSeconds(streamInfo.Duration);
-            this._mediaSource.BufferTime = TimeSpan.Zero;
-        }
-
         private void OnMediaSourceStarting(MediaStreamSource sender, MediaStreamSourceStartingEventArgs e)
         {
             e.Request.SetActualStartPosition(TimeSpan.FromSeconds(this._currentTime));
         }
 
-        private async void OnMediaSourceSampleRequested(MediaStreamSource sender, MediaStreamSourceSampleRequestedEventArgs e)
-        {
-            var deferral = e.Request.GetDeferral();
-            
+        private void OnMediaSourceSampleRequested(MediaStreamSource sender, MediaStreamSourceSampleRequestedEventArgs e)
+        {            
             var instantBuffer = this.GetBuffer();
-            var buffer = await this._waveStream.ReadAsync(instantBuffer, instantBuffer.Capacity, InputStreamOptions.None);
+            var buffer = this._mediaDecoder.ReadSample(instantBuffer, instantBuffer.Capacity);
             
             MediaStreamSample sample = null;
 
@@ -110,7 +108,7 @@ namespace FLAC_WinRT.Example.Streaming
                 sample = MediaStreamSample.CreateFromBuffer(buffer, TimeSpan.FromSeconds(this._currentTime));
                 sample.Processed += this.OnSampleProcessed;
 
-                var duration = this._waveStream.GetDurationFromBufferSize(buffer.Length);
+                var duration = this._mediaDecoder.GetDurationFromBufferSize(buffer.Length);
                 sample.Duration = TimeSpan.FromSeconds(duration);
 
                 this._currentTime += duration;
@@ -118,11 +116,10 @@ namespace FLAC_WinRT.Example.Streaming
             else
             {
                 this._currentTime = 0.0;
-                this._waveStream.Seek(0);
+                this._mediaDecoder.Seek(0);
             }
 
             e.Request.Sample = sample;
-            deferral.Complete();
         }
 
         private void OnSampleProcessed(MediaStreamSample sender, object args)
@@ -143,7 +140,7 @@ namespace FLAC_WinRT.Example.Streaming
         private void OnMediaSourceClosed(MediaStreamSource sender, MediaStreamSourceClosedEventArgs e)
         {
             this._currentTime = 0.0;
-            this._waveStream.Finish();
+            this._mediaDecoder.Finish();
         }
 
         public void Dispose()
@@ -156,13 +153,14 @@ namespace FLAC_WinRT.Example.Streaming
         {
             if (isDisposing)
             {
-                if (this._waveStream != null)
+                if (this._mediaDecoder != null)
                 {
-                    this._waveStream.Dispose();
-                    this._waveStream = null;
+                    this._mediaDecoder.Dispose();
+                    this._mediaDecoder = null;
                 }
 
                 this._buffersQueue = null;
+                this._mediaSource = null;
             }
         }
 
