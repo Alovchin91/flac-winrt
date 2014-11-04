@@ -22,8 +22,8 @@
     <ProjectGuid>{84fb1ea7-621c-4466-b640-5c122ea001c8}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <ProjectName>libFLAC_winrt</ProjectName>
-    <TargetName>libFLAC</TargetName>
-    <RootNamespace>libFLAC</RootNamespace>
+    <TargetName>FLAC.WindowsRuntime</TargetName>
+    <RootNamespace>FLAC.WindowsRuntime</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>12.0</MinimumVisualStudioVersion>
     <AppContainerApplication>true</AppContainerApplication>
