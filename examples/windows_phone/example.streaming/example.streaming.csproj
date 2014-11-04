@@ -69,11 +69,11 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="libFLAC" Condition="'$(Platform)' == 'ARM'">
-      <HintPath>$(SolutionDir)..\bin\arm\libFLAC.winmd</HintPath>
+    <Reference Include="FLAC.WindowsRuntime" Condition="'$(Platform)' == 'ARM'">
+      <HintPath>$(SolutionDir)..\bin\arm\FLAC.WindowsRuntime.winmd</HintPath>
     </Reference>
-    <Reference Include="libFLAC" Condition="'$(Platform)' == 'x86'">
-      <HintPath>$(SolutionDir)..\bin\win32\libFLAC.winmd</HintPath>
+    <Reference Include="FLAC.WindowsRuntime" Condition="'$(Platform)' == 'x86'">
+      <HintPath>$(SolutionDir)..\bin\win32\FLAC.WindowsRuntime.winmd</HintPath>
     </Reference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '12.0' ">

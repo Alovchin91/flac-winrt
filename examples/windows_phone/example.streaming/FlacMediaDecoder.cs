@@ -33,9 +33,9 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Storage.Streams;
-using libFLAC.Decoder;
-using libFLAC.Decoder.Callbacks;
-using libFLAC.Format;
+using FLAC.WindowsRuntime.Decoder;
+using FLAC.WindowsRuntime.Decoder.Callbacks;
+using FLAC.WindowsRuntime.Format;
 using Buffer = Windows.Storage.Streams.Buffer;
 
 namespace FLAC_WinRT.Example.Streaming
