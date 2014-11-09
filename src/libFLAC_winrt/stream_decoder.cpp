@@ -31,9 +31,7 @@
 
 #include "FLAC_winrt/decoder.h"
 #include "FLAC/assert.h"
-#include "private/pack_sample.h"
-
-#include <ppltasks.h>
+#include "private/helper.h"
 
 
 namespace FLAC {
@@ -336,7 +334,7 @@ namespace FLAC {
 			::FLAC__StreamDecoderReadStatus StreamDecoder::stream_read_callback_(FLAC__byte buffer[], size_t *bytes)
 			{
 				if (*bytes > 0) {
-					*bytes = concurrency::create_task(file_reader_->LoadAsync(*bytes)).get();
+					*bytes = perform_synchronously(file_reader_->LoadAsync(*bytes));
 					if (*bytes == 0)
 						return FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM;
 					file_reader_->ReadBytes(Platform::ArrayReference<FLAC__byte>(buffer, *bytes));

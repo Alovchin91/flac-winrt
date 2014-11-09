@@ -26,7 +26,7 @@
     <ClInclude Include="$(SolutionDir)include\FLAC_winrt\format.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\private\pack_sample.h">
+    <ClInclude Include="include\private\helper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

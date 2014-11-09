@@ -29,12 +29,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef FLACRT__PRIVATE__PACK_SAMPLE_H
-#define FLACRT__PRIVATE__PACK_SAMPLE_H
+#ifndef FLACRT__PRIVATE__HELPER_H
+#define FLACRT__PRIVATE__HELPER_H
 
 #include <wrl/client.h>
 #include <inspectable.h>
 #include <robuffer.h>
+#include <ppltasks.h>
 
 
 static inline HRESULT get_underlying_array(Windows::Storage::Streams::IBuffer^ buffer, FLAC__byte **ppArray)
@@ -122,5 +123,20 @@ inline unsigned int pack_sample(const int* const data[], unsigned blocksize, uns
 		throw ref new Platform::InvalidArgumentException("Invalid bits per sample count.");
 	}
 }
+
+
+template<typename _Ty>
+static
+typename concurrency::details::_TaskTypeFromParam<_Ty>::_Type perform_synchronously(_Ty param)
+{
+	concurrency::task<typename concurrency::details::_TaskTypeFromParam<_Ty>::_Type> task = concurrency::create_task(param);
+	concurrency::event synchronizer;
+	task.then([&](typename concurrency::details::_TaskTypeFromParam<_Ty>::_Type) {
+		synchronizer.set();
+	}, concurrency::task_continuation_context::use_arbitrary());
+	synchronizer.wait();
+	return task.get();
+}
+
 
 #endif

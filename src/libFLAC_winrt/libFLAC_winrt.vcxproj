@@ -123,7 +123,7 @@
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)include\FLAC_winrt\decoder.h" />
     <ClInclude Include="$(SolutionDir)include\FLAC_winrt\format.h" />
-    <ClInclude Include="include\private\pack_sample.h" />
+    <ClInclude Include="include\private\helper.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\libFLAC\libFLAC_static.vcxproj">
