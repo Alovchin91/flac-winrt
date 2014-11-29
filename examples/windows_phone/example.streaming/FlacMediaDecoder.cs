@@ -182,27 +182,27 @@ namespace FLAC_WinRT.Example.Streaming
             this._isMetadataRead = true;
         }
 
-        private StreamDecoderWriteStatus WriteCallback(Frame frame, StreamDecoderWriteBuffer buffer)
+        private void WriteCallback(object sender, StreamDecoderWriteEventArgs e)
         {
-            IBuffer currentSample = buffer.GetBuffer();
+            IBuffer currentSample = e.GetBuffer();
             this._currentData = new BufferSegment(currentSample);
-            return StreamDecoderWriteStatus.Continue;
+            e.SetResult(StreamDecoderWriteStatus.Continue);
         }
 
-        private void MetadataCallback(StreamMetadata metadata)
+        private void MetadataCallback(object sender, StreamDecoderMetadataEventArgs e)
         {
-            if (metadata.Type == MetadataType.StreamInfo && metadata.StreamInfo != null)
+            if (e.Metadata.Type == MetadataType.StreamInfo && e.Metadata.StreamInfo != null)
             {
-                uint blockAlign = metadata.StreamInfo.Channels*(metadata.StreamInfo.BitsPerSample/8);
-                uint avgBytesPerSec = metadata.StreamInfo.SampleRate*blockAlign;
+                uint blockAlign = e.Metadata.StreamInfo.Channels*(e.Metadata.StreamInfo.BitsPerSample/8);
+                uint avgBytesPerSec = e.Metadata.StreamInfo.SampleRate*blockAlign;
 
-                double duration = (double) metadata.StreamInfo.TotalSamples/metadata.StreamInfo.SampleRate;
+                double duration = (double) e.Metadata.StreamInfo.TotalSamples/e.Metadata.StreamInfo.SampleRate;
 
                 this._streamInfo = new FlacMediaStreamInfo(
                     duration, avgBytesPerSec,
-                    metadata.StreamInfo.BitsPerSample,
-                    metadata.StreamInfo.SampleRate,
-                    metadata.StreamInfo.Channels);
+                    e.Metadata.StreamInfo.BitsPerSample,
+                    e.Metadata.StreamInfo.SampleRate,
+                    e.Metadata.StreamInfo.Channels);
             }
         }
 
