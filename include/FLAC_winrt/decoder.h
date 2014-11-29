@@ -303,7 +303,38 @@ namespace FLAC {
 				*    \c FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM if and only if
 				*    zero bytes were read and there is no more data to be read.
 				*/
-				public delegate StreamDecoderReadStatus StreamDecoderReadCallback(Platform::WriteOnlyArray<FLAC__byte>^ buffer, size_t *bytes);
+				public ref class StreamDecoderReadEventArgs sealed {
+				public:
+					property Platform::Array<FLAC__byte>^ Buffer {
+						Platform::Array<FLAC__byte>^ get() {
+							return Platform::ArrayReference<FLAC__byte>(buffer_, *bytes_);
+						}
+					}
+
+					void SetResult(size_t bytes, StreamDecoderReadStatus result) {
+						*bytes_ = bytes;
+						result_ = (::FLAC__StreamDecoderReadStatus)(int)result;
+						handled_ = true;
+					}
+
+				internal:
+					StreamDecoderReadEventArgs(FLAC__byte *buffer, size_t *bytes)
+						: buffer_(buffer), bytes_(bytes) { }
+
+					property ::FLAC__StreamDecoderReadStatus Result {
+						::FLAC__StreamDecoderReadStatus get() {
+							if (handled_) return result_;
+							throw ref new Platform::COMException(E_NOT_SET);
+						}
+					}
+
+				private:
+					FLAC__byte *buffer_;
+					size_t *bytes_;
+
+					bool handled_;
+					::FLAC__StreamDecoderReadStatus result_;
+				};
 
 
 				/** Signature for the seek callback.
@@ -339,7 +370,34 @@ namespace FLAC {
 				* \retval FLAC__StreamDecoderSeekStatus
 				*    The callee's return status.
 				*/
-				public delegate StreamDecoderSeekStatus StreamDecoderSeekCallback(FLAC__uint64 absoluteByteOffset);
+				public ref class StreamDecoderSeekEventArgs sealed {
+				public:
+					property FLAC__uint64 AbsoluteByteOffset {
+						FLAC__uint64 get() { return absoluteByteOffset_; }
+					}
+
+					void SetResult(StreamDecoderSeekStatus result) {
+						result_ = (::FLAC__StreamDecoderSeekStatus)(int)result;
+						handled_ = true;
+					}
+
+				internal:
+					StreamDecoderSeekEventArgs(const FLAC__uint64 &absoluteByteOffset)
+						: absoluteByteOffset_(absoluteByteOffset) { }
+
+					property ::FLAC__StreamDecoderSeekStatus Result {
+						::FLAC__StreamDecoderSeekStatus get() {
+							if (handled_) return result_;
+							throw ref new Platform::COMException(E_NOT_SET);
+						}
+					}
+
+				private:
+					const FLAC__uint64 &absoluteByteOffset_;
+
+					bool handled_;
+					::FLAC__StreamDecoderSeekStatus result_;
+				};
 
 
 				/** Signature for the tell callback.
@@ -378,7 +436,31 @@ namespace FLAC {
 				* \retval FLAC__StreamDecoderTellStatus
 				*    The callee's return status.
 				*/
-				public delegate StreamDecoderTellStatus StreamDecoderTellCallback(FLAC__uint64 *absoluteByteOffset);
+				public ref class StreamDecoderTellEventArgs sealed {
+				public:
+					void SetResult(FLAC__uint64 absoluteByteOffset, StreamDecoderTellStatus result) {
+						*absoluteByteOffset_ = absoluteByteOffset;
+						result_ = (::FLAC__StreamDecoderTellStatus)(int)result;
+						handled_ = true;
+					}
+
+				internal:
+					StreamDecoderTellEventArgs(FLAC__uint64 *absoluteByteOffset)
+						: absoluteByteOffset_(absoluteByteOffset) { }
+
+					property ::FLAC__StreamDecoderTellStatus Result {
+						::FLAC__StreamDecoderTellStatus get() {
+							if (handled_) return result_;
+							throw ref new Platform::COMException(E_NOT_SET);
+						}
+					}
+
+				private:
+					FLAC__uint64 *absoluteByteOffset_;
+
+					bool handled_;
+					::FLAC__StreamDecoderTellStatus result_;
+				};
 
 
 				/** Signature for the length callback.
@@ -417,7 +499,31 @@ namespace FLAC {
 				* \retval FLAC__StreamDecoderLengthStatus
 				*    The callee's return status.
 				*/
-				public delegate StreamDecoderLengthStatus StreamDecoderLengthCallback(FLAC__uint64 *streamLength);
+				public ref class StreamDecoderLengthEventArgs sealed {
+				public:
+					void SetResult(FLAC__uint64 streamLength, StreamDecoderLengthStatus result) {
+						*streamLength_ = streamLength;
+						result_ = (::FLAC__StreamDecoderLengthStatus)(int)result;
+						handled_ = true;
+					}
+
+				internal:
+					StreamDecoderLengthEventArgs(FLAC__uint64 *streamLength)
+						: streamLength_(streamLength) { }
+
+					property ::FLAC__StreamDecoderLengthStatus Result {
+						::FLAC__StreamDecoderLengthStatus get() {
+							if (handled_) return result_;
+							throw ref new Platform::COMException(E_NOT_SET);
+						}
+					}
+
+				private:
+					FLAC__uint64 *streamLength_;
+
+					bool handled_;
+					::FLAC__StreamDecoderLengthStatus result_;
+				};
 
 
 				/** Signature for the EOF callback.
@@ -445,27 +551,28 @@ namespace FLAC {
 				* \retval FLAC__bool
 				*    \c true if the currently at the end of the stream, else \c false.
 				*/
-				public delegate bool StreamDecoderEofCallback();
-
-
-				/* Stream decoder write callback buffer */
-				public ref class StreamDecoderWriteBuffer sealed {
+				public ref class StreamDecoderEofEventArgs sealed {
 				public:
-					Windows::Storage::Streams::IBuffer^ GetBuffer();
-
-					Platform::Array<FLAC__int32>^ GetData(unsigned index);
+					void SetResult(bool result) {
+						result_ = result ? TRUE : FALSE;
+						handled_ = true;
+					}
 
 				internal:
-					StreamDecoderWriteBuffer(const FLAC__int32 *const *data, const ::FLAC__FrameHeader &frame_header)
-						: data_(data), frame_header_(frame_header), buffer_(nullptr), data_array_(nullptr) { }
+					StreamDecoderEofEventArgs() { }
+
+					property ::FLAC__bool Result {
+						::FLAC__bool get() {
+							if (handled_) return result_;
+							throw ref new Platform::COMException(E_NOT_SET);
+						}
+					}
 
 				private:
-					const FLAC__int32 *const *data_;
-					const ::FLAC__FrameHeader &frame_header_;
-
-					Windows::Storage::Streams::IBuffer^ buffer_;
-					Platform::Array<Platform::Object^>^ data_array_;
+					bool handled_;
+					::FLAC__bool result_;
 				};
+
 
 				/** Signature for the write callback.
 				*
@@ -493,7 +600,44 @@ namespace FLAC {
 				* \retval FLAC__StreamDecoderWriteStatus
 				*    The callee's return status.
 				*/
-				public delegate StreamDecoderWriteStatus StreamDecoderWriteCallback(Format::Frame^ frame, StreamDecoderWriteBuffer^ buffer);
+				public ref class StreamDecoderWriteEventArgs sealed {
+				public:
+					property Format::Frame^ Frame {
+						Format::Frame^ get() { return frame_; }
+					}
+
+					Windows::Storage::Streams::IBuffer^ GetBuffer();
+
+					Platform::Array<FLAC__int32>^ GetData(unsigned index);
+
+					void SetResult(StreamDecoderWriteStatus result) {
+						result_ = (::FLAC__StreamDecoderWriteStatus)(int)result;
+						handled_ = true;
+					}
+
+				internal:
+					StreamDecoderWriteEventArgs(const FLAC__int32 *const *data, const ::FLAC__Frame *frame)
+						: data_(data), buffer_(nullptr), data_array_(nullptr) {
+						frame_ = ref new Format::Frame(frame);
+					}
+
+					property ::FLAC__StreamDecoderWriteStatus Result {
+						::FLAC__StreamDecoderWriteStatus get() {
+							if (handled_) return result_;
+							throw ref new Platform::COMException(E_NOT_SET);
+						}
+					}
+
+				private:
+					const FLAC__int32 *const *data_;
+
+					Format::Frame^ frame_;
+					Windows::Storage::Streams::IBuffer^ buffer_;
+					Platform::Array<Platform::Object^>^ data_array_;
+
+					bool handled_;
+					::FLAC__StreamDecoderWriteStatus result_;
+				};
 
 
 				/** Signature for the metadata callback.
@@ -521,7 +665,20 @@ namespace FLAC {
 				* \param  client_data  The callee's client data set through
 				*                      FLAC__stream_decoder_init_*().
 				*/
-				public delegate void StreamDecoderMetadataCallback(Format::StreamMetadata^ metadata);
+				public ref class StreamDecoderMetadataEventArgs sealed {
+				public:
+					property Format::StreamMetadata^ Metadata {
+						Format::StreamMetadata^ get() { return metadata_; }
+					}
+
+				internal:
+					StreamDecoderMetadataEventArgs(const ::FLAC__StreamMetadata *metadata) {
+						metadata_ = ref new Format::StreamMetadata(metadata);
+					}
+
+				private:
+					Format::StreamMetadata^ metadata_;
+				};
 
 
 				/** Signature for the error callback.
@@ -539,7 +696,19 @@ namespace FLAC {
 				* \param  client_data  The callee's client data set through
 				*                      FLAC__stream_decoder_init_*().
 				*/
-				public delegate void StreamDecoderErrorCallback(StreamDecoderErrorStatus status);
+				public ref class StreamDecoderErrorEventArgs sealed {
+				public:
+					property StreamDecoderErrorStatus Status {
+						StreamDecoderErrorStatus get() { return (StreamDecoderErrorStatus)(int)status_; }
+					}
+
+				internal:
+					StreamDecoderErrorEventArgs(const ::FLAC__StreamDecoderErrorStatus &status)
+						: status_(status) { }
+
+				private:
+					const ::FLAC__StreamDecoderErrorStatus &status_;
+				};
 
 			}
 
@@ -612,28 +781,28 @@ namespace FLAC {
 				bool SeekAbsolute(FLAC__uint64 sample);	///< See FLAC__stream_decoder_seek_absolute()
 
 				/// see FLAC__StreamDecoderReadCallback
-				event Callbacks::StreamDecoderReadCallback^ ReadCallback;
+				event Windows::Foundation::TypedEventHandler<Platform::Object^, Callbacks::StreamDecoderReadEventArgs^>^ ReadCallback;
 
 				/// see FLAC__StreamDecoderSeekCallback
-				event Callbacks::StreamDecoderSeekCallback^ SeekCallback;
+				event Windows::Foundation::TypedEventHandler<Platform::Object^, Callbacks::StreamDecoderSeekEventArgs^>^ SeekCallback;
 
 				/// see FLAC__StreamDecoderTellCallback
-				event Callbacks::StreamDecoderTellCallback^ TellCallback;
+				event Windows::Foundation::TypedEventHandler<Platform::Object^, Callbacks::StreamDecoderTellEventArgs^>^ TellCallback;
 
 				/// see FLAC__StreamDecoderLengthCallback
-				event Callbacks::StreamDecoderLengthCallback^ LengthCallback;
+				event Windows::Foundation::TypedEventHandler<Platform::Object^, Callbacks::StreamDecoderLengthEventArgs^>^ LengthCallback;
 
 				/// see FLAC__StreamDecoderEofCallback
-				event Callbacks::StreamDecoderEofCallback^ EofCallback;
+				event Windows::Foundation::TypedEventHandler<Platform::Object^, Callbacks::StreamDecoderEofEventArgs^>^ EofCallback;
 
 				/// see FLAC__StreamDecoderWriteCallback
-				event Callbacks::StreamDecoderWriteCallback^ WriteCallback;
+				event Windows::Foundation::TypedEventHandler<Platform::Object^, Callbacks::StreamDecoderWriteEventArgs^>^ WriteCallback;
 
 				/// see FLAC__StreamDecoderMetadataCallback
-				event Callbacks::StreamDecoderMetadataCallback^ MetadataCallback;
+				event Windows::Foundation::TypedEventHandler<Platform::Object^, Callbacks::StreamDecoderMetadataEventArgs^>^ MetadataCallback;
 
 				/// see FLAC__StreamDecoderErrorCallback
-				event Callbacks::StreamDecoderErrorCallback^ ErrorCallback;
+				event Windows::Foundation::TypedEventHandler<Platform::Object^, Callbacks::StreamDecoderErrorEventArgs^>^ ErrorCallback;
 
 			private:
 				::FLAC__StreamDecoder *decoder_;
@@ -648,12 +817,6 @@ namespace FLAC {
 				static ::FLAC__StreamDecoderWriteStatus write_callback_(const ::FLAC__StreamDecoder *decoder, const ::FLAC__Frame *frame, const FLAC__int32 * const buffer[], void *client_data);
 				static void metadata_callback_(const ::FLAC__StreamDecoder *decoder, const ::FLAC__StreamMetadata *metadata, void *client_data);
 				static void error_callback_(const ::FLAC__StreamDecoder *decoder, ::FLAC__StreamDecoderErrorStatus status, void *client_data);
-
-				::FLAC__StreamDecoderReadStatus stream_read_callback_(FLAC__byte buffer[], size_t *bytes);
-				::FLAC__StreamDecoderSeekStatus stream_seek_callback_(FLAC__uint64 absolute_byte_offset);
-				::FLAC__StreamDecoderTellStatus stream_tell_callback_(FLAC__uint64 *absolute_byte_offset);
-				::FLAC__StreamDecoderLengthStatus stream_length_callback_(FLAC__uint64 *stream_length);
-				FLAC__bool stream_eof_callback_();
 
 			private:
 				// Private and undefined so you can't use them:
