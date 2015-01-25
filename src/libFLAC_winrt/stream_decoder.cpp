@@ -41,8 +41,10 @@ namespace FLAC {
 		namespace Decoder {
 
 			StreamDecoder::StreamDecoder() :
-				decoder_(::FLAC__stream_decoder_new()), file_stream_(nullptr)
-			{ }
+				file_stream_(nullptr), file_reader_(nullptr)
+			{
+				decoder_ = ::FLAC__stream_decoder_new();
+			}
 
 			StreamDecoder::~StreamDecoder()
 			{
@@ -59,7 +61,7 @@ namespace FLAC {
 
 			bool StreamDecoder::IsValid::get()
 			{
-				return 0 != decoder_ && ReferenceEquals(file_stream_, nullptr) == ReferenceEquals(file_reader_, nullptr);
+				return (0 != decoder_) && (ReferenceEquals(file_stream_, nullptr) == ReferenceEquals(file_reader_, nullptr));
 			}
 
 			bool StreamDecoder::SetOggSerialNumber(int value)
