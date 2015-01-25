@@ -185,6 +185,7 @@ namespace FLAC_WinRT.Example.Streaming
         private void WriteCallback(object sender, StreamDecoderWriteEventArgs e)
         {
             IBuffer currentSample = e.GetBuffer();
+            GC.AddMemoryPressure(currentSample.Capacity);
             this._currentData = new BufferSegment(currentSample);
             e.SetResult(StreamDecoderWriteStatus.Continue);
         }

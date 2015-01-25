@@ -13,6 +13,9 @@
       <UniqueIdentifier>{e0e89016-cc38-47f5-8574-9562826faffd}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
+    <Filter Include="Public Header Files">
+      <UniqueIdentifier>{af8c3af8-46f1-4b57-8baa-98584f6d7f34}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stream_decoder.cpp">
@@ -21,12 +24,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)include\FLAC_winrt\decoder.h">
-      <Filter>Header Files</Filter>
+      <Filter>Public Header Files</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)include\FLAC_winrt\format.h">
-      <Filter>Header Files</Filter>
+      <Filter>Public Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\private\helper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\private\deferral.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

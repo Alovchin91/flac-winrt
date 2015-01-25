@@ -34,6 +34,7 @@
 
 #include "FLAC_winrt/format.h"
 #include "FLAC/stream_decoder.h"
+#include "private/deferral.h"
 
 
 /** \file include/FLAC++/decoder.h
@@ -305,6 +306,10 @@ namespace FLAC {
 				*/
 				public ref class StreamDecoderReadEventArgs sealed {
 				public:
+					IDeferral^ GetDeferral() {
+						return deferral_manager_.GetDeferral();
+					}
+
 					property Platform::Array<FLAC__byte>^ Buffer {
 						Platform::Array<FLAC__byte>^ get() {
 							return Platform::ArrayReference<FLAC__byte>(buffer_, *bytes_);
@@ -319,7 +324,7 @@ namespace FLAC {
 
 				internal:
 					StreamDecoderReadEventArgs(FLAC__byte *buffer, size_t *bytes)
-						: buffer_(buffer), bytes_(bytes) { }
+						: buffer_(buffer), bytes_(bytes), deferral_manager_(DeferralManager()) { }
 
 					property ::FLAC__StreamDecoderReadStatus Result {
 						::FLAC__StreamDecoderReadStatus get() {
@@ -328,7 +333,13 @@ namespace FLAC {
 						}
 					}
 
+					Concurrency::task<void> WaitForDeferralsAsync() {
+						return deferral_manager_.SignalAndWaitAsync();
+					}
+
 				private:
+					DeferralManager deferral_manager_;
+
 					FLAC__byte *buffer_;
 					size_t *bytes_;
 
@@ -602,6 +613,10 @@ namespace FLAC {
 				*/
 				public ref class StreamDecoderWriteEventArgs sealed {
 				public:
+					IDeferral^ GetDeferral() {
+						return deferral_manager_.GetDeferral();
+					}
+
 					property Format::Frame^ Frame {
 						Format::Frame^ get() { return frame_; }
 					}
@@ -617,7 +632,7 @@ namespace FLAC {
 
 				internal:
 					StreamDecoderWriteEventArgs(const FLAC__int32 *const *data, const ::FLAC__Frame *frame)
-						: data_(data), buffer_(nullptr), data_array_(nullptr) {
+						: data_(data), buffer_(nullptr), data_array_(nullptr), deferral_manager_(DeferralManager()) {
 						frame_ = ref new Format::Frame(frame);
 					}
 
@@ -628,7 +643,13 @@ namespace FLAC {
 						}
 					}
 
+					Concurrency::task<void> WaitForDeferralsAsync() {
+						return deferral_manager_.SignalAndWaitAsync();
+					}
+
 				private:
+					DeferralManager deferral_manager_;
+
 					const FLAC__int32 *const *data_;
 
 					Format::Frame^ frame_;

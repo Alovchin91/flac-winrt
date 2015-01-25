@@ -123,6 +123,7 @@
   <ItemGroup>
     <ClInclude Include="$(SolutionDir)include\FLAC_winrt\decoder.h" />
     <ClInclude Include="$(SolutionDir)include\FLAC_winrt\format.h" />
+    <ClInclude Include="include\private\deferral.h" />
     <ClInclude Include="include\private\helper.h" />
   </ItemGroup>
   <ItemGroup>

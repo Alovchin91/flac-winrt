@@ -269,6 +269,8 @@ namespace FLAC {
 
 				Callbacks::StreamDecoderReadEventArgs^ args = ref new Callbacks::StreamDecoderReadEventArgs(buffer, bytes);
 				instance->ReadCallback(instance, args);
+				perform_synchronously(args->WaitForDeferralsAsync());
+
 				return args->Result;
 			}
 
@@ -346,8 +348,11 @@ namespace FLAC {
 				FLAC__ASSERT(0 != client_data);
 				StreamDecoder^ instance = reinterpret_cast<StreamDecoder^>(client_data);
 				FLAC__ASSERT(nullptr != instance && instance->IsValid);
+
 				Callbacks::StreamDecoderWriteEventArgs^ args = ref new Callbacks::StreamDecoderWriteEventArgs(buffer, frame);
 				instance->WriteCallback(instance, args);
+				perform_synchronously(args->WaitForDeferralsAsync());
+
 				return args->Result;
 			}
 
