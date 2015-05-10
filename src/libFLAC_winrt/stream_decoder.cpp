@@ -1,5 +1,5 @@
 /* libFLAC_winrt - FLAC library for Windows Runtime
- * Copyright (C) 2014  Alexander Ovchinnikov
+ * Copyright (C) 2014-2015  Alexander Ovchinnikov
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +29,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <ppltasks.h>
+
 #include "FLAC_winrt/decoder.h"
 #include "FLAC/assert.h"
 #include "private/helper.h"
@@ -41,27 +43,25 @@ namespace FLAC {
 		namespace Decoder {
 
 			StreamDecoder::StreamDecoder() :
-				file_stream_(nullptr), file_reader_(nullptr)
+				file_stream_(nullptr)
 			{
 				decoder_ = ::FLAC__stream_decoder_new();
 			}
 
 			StreamDecoder::~StreamDecoder()
 			{
-				if (0 != decoder_) {
+				if (nullptr != decoder_) {
 					(void)::FLAC__stream_decoder_finish(decoder_);
 					::FLAC__stream_decoder_delete(decoder_);
 				}
 
-				if (nullptr != file_reader_) {
-					(void)file_reader_->DetachStream();
-					delete file_reader_;
-				}
+				decoder_ = nullptr;
+				file_stream_ = nullptr;
 			}
 
 			bool StreamDecoder::IsValid::get()
 			{
-				return (0 != decoder_) && (ReferenceEquals(file_stream_, nullptr) == ReferenceEquals(file_reader_, nullptr));
+				return (nullptr != decoder_);
 			}
 
 			bool StreamDecoder::SetOggSerialNumber(int value)
@@ -177,7 +177,6 @@ namespace FLAC {
 				FLAC__ASSERT(IsValid);
 				file_stream_ = fileStream;
 				file_stream_->Seek(0);
-				file_reader_ = ref new Windows::Storage::Streams::DataReader(file_stream_);
 				return (StreamDecoderInitStatus)(int)::FLAC__stream_decoder_init_stream(decoder_, read_callback_, seek_callback_, tell_callback_, length_callback_, eof_callback_, write_callback_, metadata_callback_, error_callback_, /*client_data=*/(void*)this);
 			}
 
@@ -192,18 +191,12 @@ namespace FLAC {
 				FLAC__ASSERT(IsValid);
 				file_stream_ = fileStream;
 				file_stream_->Seek(0);
-				file_reader_ = ref new Windows::Storage::Streams::DataReader(file_stream_);
 				return (StreamDecoderInitStatus)(int)::FLAC__stream_decoder_init_ogg_stream(decoder_, read_callback_, seek_callback_, tell_callback_, length_callback_, eof_callback_, write_callback_, metadata_callback_, error_callback_, /*client_data=*/(void*)this);
 			}
 
 			bool StreamDecoder::Finish()
 			{
 				FLAC__ASSERT(IsValid);
-				if (nullptr != file_reader_) {
-					(void)file_reader_->DetachStream();
-					delete file_reader_;
-				}
-				file_reader_ = nullptr;
 				file_stream_ = nullptr;
 				return !!(::FLAC__stream_decoder_finish(decoder_));
 			}
@@ -258,20 +251,14 @@ namespace FLAC {
 				StreamDecoder^ instance = reinterpret_cast<StreamDecoder^>(client_data);
 				FLAC__ASSERT(nullptr != instance && instance->IsValid);
 
-				if (instance->file_stream_) {
-					if (*bytes > 0) {
-						*bytes = perform_synchronously(instance->file_reader_->LoadAsync(*bytes));
-						if (*bytes == 0)
-							return FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM;
-						instance->file_reader_->ReadBytes(Platform::ArrayReference<FLAC__byte>(buffer, *bytes));
-						return FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
-					}
-					return FLAC__STREAM_DECODER_READ_STATUS_ABORT;
-				}
-
 				Callbacks::StreamDecoderReadEventArgs^ args = ref new Callbacks::StreamDecoderReadEventArgs(buffer, bytes);
-				instance->ReadCallback(instance, args);
-				perform_synchronously(args->WaitForDeferralsAsync());
+				if (instance->file_stream_) {
+					StreamDecoder::file_stream_read_(instance->file_stream_, args);
+				}
+				else {
+					instance->ReadCallback(instance, args);
+				}
+				args->WaitForDeferrals();
 
 				return args->Result;
 			}
@@ -283,15 +270,15 @@ namespace FLAC {
 				StreamDecoder^ instance = reinterpret_cast<StreamDecoder^>(client_data);
 				FLAC__ASSERT(nullptr != instance && instance->IsValid);
 
-				if (instance->file_stream_) {
-					if (absolute_byte_offset > instance->file_stream_->Size)
-						return FLAC__STREAM_DECODER_SEEK_STATUS_ERROR;
-					instance->file_stream_->Seek(absolute_byte_offset);
-					return FLAC__STREAM_DECODER_SEEK_STATUS_OK;
-				}
-
 				Callbacks::StreamDecoderSeekEventArgs^ args = ref new Callbacks::StreamDecoderSeekEventArgs(absolute_byte_offset);
-				instance->SeekCallback(instance, args);
+				if (instance->file_stream_) {
+					StreamDecoder::file_stream_seek_(instance->file_stream_, args);
+				}
+				else {
+					instance->SeekCallback(instance, args);
+				}
+				args->WaitForDeferrals();
+
 				return args->Result;
 			}
 
@@ -302,13 +289,15 @@ namespace FLAC {
 				StreamDecoder^ instance = reinterpret_cast<StreamDecoder^>(client_data);
 				FLAC__ASSERT(nullptr != instance && instance->IsValid);
 
-				if (instance->file_stream_) {
-					*absolute_byte_offset = instance->file_stream_->Position;
-					return FLAC__STREAM_DECODER_TELL_STATUS_OK;
-				}
-
 				Callbacks::StreamDecoderTellEventArgs^ args = ref new Callbacks::StreamDecoderTellEventArgs(absolute_byte_offset);
-				instance->TellCallback(instance, args);
+				if (instance->file_stream_) {
+					StreamDecoder::file_stream_tell_(instance->file_stream_, args);
+				}
+				else {
+					instance->TellCallback(instance, args);
+				}
+				args->WaitForDeferrals();
+
 				return args->Result;
 			}
 
@@ -319,13 +308,15 @@ namespace FLAC {
 				StreamDecoder^ instance = reinterpret_cast<StreamDecoder^>(client_data);
 				FLAC__ASSERT(nullptr != instance && instance->IsValid);
 
-				if (instance->file_stream_) {
-					*stream_length = instance->file_stream_->Size;
-					return FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
-				}
-
 				Callbacks::StreamDecoderLengthEventArgs^ args = ref new Callbacks::StreamDecoderLengthEventArgs(stream_length);
-				instance->LengthCallback(instance, args);
+				if (instance->file_stream_) {
+					StreamDecoder::file_stream_length_(instance->file_stream_, args);
+				}
+				else {
+					instance->LengthCallback(instance, args);
+				}
+				args->WaitForDeferrals();
+
 				return args->Result;
 			}
 
@@ -336,11 +327,15 @@ namespace FLAC {
 				StreamDecoder^ instance = reinterpret_cast<StreamDecoder^>(client_data);
 				FLAC__ASSERT(nullptr != instance && instance->IsValid);
 
-				if (instance->file_stream_)
-					return (instance->file_stream_->Position < instance->file_stream_->Size) ? FALSE : TRUE;
-
 				Callbacks::StreamDecoderEofEventArgs^ args = ref new Callbacks::StreamDecoderEofEventArgs();
-				instance->EofCallback(instance, args);
+				if (instance->file_stream_) {
+					StreamDecoder::file_stream_eof_(instance->file_stream_, args);
+				}
+				else {
+					instance->EofCallback(instance, args);
+				}
+				args->WaitForDeferrals();
+
 				return args->Result;
 			}
 
@@ -353,7 +348,7 @@ namespace FLAC {
 
 				Callbacks::StreamDecoderWriteEventArgs^ args = ref new Callbacks::StreamDecoderWriteEventArgs(buffer, frame);
 				instance->WriteCallback(instance, args);
-				perform_synchronously(args->WaitForDeferralsAsync());
+				args->WaitForDeferrals();
 
 				return args->Result;
 			}
@@ -377,33 +372,84 @@ namespace FLAC {
 			}
 
 
-			namespace Callbacks {
+			void StreamDecoder::file_stream_read_(Windows::Storage::Streams::IRandomAccessStream^ file_stream, Callbacks::StreamDecoderReadEventArgs^ e)
+			{
+				if (e->BufferSize > 0) {
+					Callbacks::IDeferral^ deferral = e->GetDeferral();
+					Windows::Storage::Streams::IDataReader^ dataReader = ref new Windows::Storage::Streams::DataReader(file_stream);
 
-				Windows::Storage::Streams::IBuffer^ StreamDecoderWriteEventArgs::GetBuffer()
-				{
-					if (!buffer_) {
-						uint32 count = frame_->Header->Blocksize * ((frame_->Header->Channels * frame_->Header->BitsPerSample) >> 3);
-						buffer_ = ref new Windows::Storage::Streams::Buffer(count);
-						buffer_->Length = pack_sample(data_, frame_->Header->Blocksize, frame_->Header->Channels, buffer_, frame_->Header->BitsPerSample);
-					}
-					return buffer_;
-				}
+					Windows::Storage::Streams::DataReaderLoadOperation^ loadOperation = dataReader->LoadAsync(e->BufferSize);
+					concurrency::create_task(loadOperation).then([e, dataReader, deferral](uint32 count)
+					{
+						e->BufferSize = count;
 
-				Platform::Array<FLAC__int32>^ StreamDecoderWriteEventArgs::GetData(unsigned index)
-				{
-					if (index > frame_->Header->Channels)
-						throw ref new Platform::OutOfBoundsException();
-
-					if (!data_array_) {
-						data_array_ = ref new Platform::Array<Platform::Object^>(frame_->Header->Channels);
-						for (unsigned i = 0; i < frame_->Header->Channels; i++) {
-							data_array_[i] = ref new Platform::Array<FLAC__int32>(const_cast<FLAC__int32 *>(data_[i]), frame_->Header->Blocksize);
+						if (0 == e->BufferSize) {
+							e->SetResult(Callbacks::StreamDecoderReadStatus::EndOfStream);
 						}
-					}
+						else {
+							dataReader->ReadBytes(e->GetArrayReference());
+							e->SetResult(Callbacks::StreamDecoderReadStatus::Continue);
+						}
 
-					return safe_cast<Platform::Array<FLAC__int32>^>(data_array_[index]);
+						(void)dataReader->DetachStream();
+						deferral->Complete();
+					});
+				}
+				else {
+					e->SetResult(Callbacks::StreamDecoderReadStatus::Abort);
+				}
+			}
+
+			void StreamDecoder::file_stream_seek_(Windows::Storage::Streams::IRandomAccessStream^ file_stream, Callbacks::StreamDecoderSeekEventArgs^ e)
+			{
+				if (e->AbsoluteByteOffset > file_stream->Size) {
+					e->SetResult(Callbacks::StreamDecoderSeekStatus::Error);
+				}
+				else {
+					file_stream->Seek(e->AbsoluteByteOffset);
+					e->SetResult(Callbacks::StreamDecoderSeekStatus::OK);
+				}
+			}
+
+			void StreamDecoder::file_stream_tell_(Windows::Storage::Streams::IRandomAccessStream^ file_stream, Callbacks::StreamDecoderTellEventArgs^ e)
+			{
+				e->SetAbsoluteByteOffset(file_stream->Position);
+				e->SetResult(Callbacks::StreamDecoderTellStatus::OK);
+			}
+
+			void StreamDecoder::file_stream_length_(Windows::Storage::Streams::IRandomAccessStream^ file_stream, Callbacks::StreamDecoderLengthEventArgs^ e)
+			{
+				e->SetStreamLength(file_stream->Size);
+				e->SetResult(Callbacks::StreamDecoderLengthStatus::OK);
+			}
+
+			void StreamDecoder::file_stream_eof_(Windows::Storage::Streams::IRandomAccessStream^ file_stream, Callbacks::StreamDecoderEofEventArgs^ e)
+			{
+				e->SetResult(file_stream->Position >= file_stream->Size);
+			}
+
+
+			Windows::Storage::Streams::IBuffer^ Callbacks::StreamDecoderWriteEventArgs::GetBuffer()
+			{
+				if (!buffer_) {
+					buffer_ = Helper::pack_sample(data_, frame_->Header->Blocksize, frame_->Header->Channels, frame_->Header->BitsPerSample);
+				}
+				return buffer_;
+			}
+
+			Platform::Array<FLAC__int32>^ Callbacks::StreamDecoderWriteEventArgs::GetData(unsigned index)
+			{
+				if (index > frame_->Header->Channels)
+					throw ref new Platform::OutOfBoundsException();
+
+				if (!data_array_) {
+					data_array_ = ref new Platform::Array<Platform::Object^>(frame_->Header->Channels);
+					for (unsigned i = 0; i < frame_->Header->Channels; i++) {
+						data_array_[i] = ref new Platform::Array<FLAC__int32>(const_cast<FLAC__int32 *>(data_[i]), frame_->Header->Blocksize);
+					}
 				}
 
+				return safe_cast<Platform::Array<FLAC__int32>^>(data_array_[index]);
 			}
 
 		}

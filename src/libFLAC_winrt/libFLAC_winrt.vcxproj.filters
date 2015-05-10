@@ -29,10 +29,10 @@
     <ClInclude Include="$(SolutionDir)include\FLAC_winrt\format.h">
       <Filter>Public Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\private\helper.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="$(SolutionDir)include\FLAC_winrt\deferral.h">
+      <Filter>Public Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\private\deferral.h">
+    <ClInclude Include="include\private\helper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,5 +1,5 @@
 /* libFLAC_winrt - FLAC library for Windows Runtime
- * Copyright (C) 2014  Alexander Ovchinnikov
+ * Copyright (C) 2014-2015  Alexander Ovchinnikov
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,111 +32,77 @@
 #ifndef FLACRT__PRIVATE__HELPER_H
 #define FLACRT__PRIVATE__HELPER_H
 
-#include <wrl/client.h>
-#include <inspectable.h>
-#include <robuffer.h>
-#include <ppltasks.h>
 
-
-static inline HRESULT get_underlying_array(Windows::Storage::Streams::IBuffer^ buffer, FLAC__byte **ppArray)
+struct Helper
 {
-	HRESULT hr = S_OK;
+private:
+	static inline Windows::Storage::Streams::IBuffer^ pack_sample_8(const int* const data[], unsigned blocksize, unsigned channels)
+	{
+		Windows::Storage::Streams::IDataWriter^ dataWriter = ref new Windows::Storage::Streams::DataWriter();
+		for (unsigned i = 0; i < blocksize; i++) {
+			for (unsigned j = 0; j < channels; j++) {
+				dataWriter->WriteByte((FLAC__byte)(data[j][i] + 0x80));
+			}
+		}
+		return dataWriter->DetachBuffer();
+	}
 
-	IInspectable *inspectable = (IInspectable *)reinterpret_cast<IInspectable *>(buffer);
-	Microsoft::WRL::ComPtr<Windows::Storage::Streams::IBufferByteAccess> spBuffAccess;
-	hr = inspectable->QueryInterface(__uuidof(Windows::Storage::Streams::IBufferByteAccess), (void **)&spBuffAccess);
-	if (SUCCEEDED(hr))
-		hr = spBuffAccess->Buffer(ppArray);
+	static inline Windows::Storage::Streams::IBuffer^ pack_sample_16(const int* const data[], unsigned blocksize, unsigned channels)
+	{
+		Windows::Storage::Streams::IDataWriter^ dataWriter = ref new Windows::Storage::Streams::DataWriter();
+		for (unsigned i = 0; i < blocksize; i++) {
+			for (unsigned j = 0; j < channels; j++) {
+				dataWriter->WriteByte((FLAC__byte)(data[j][i] & 0xFF));
+				dataWriter->WriteByte((FLAC__byte)((data[j][i] >> 8) & 0xFF));
+			}
+		}
+		return dataWriter->DetachBuffer();
+	}
 
-	return hr;
-}
+	static inline Windows::Storage::Streams::IBuffer^ pack_sample_24(const int* const data[], unsigned blocksize, unsigned channels)
+	{
+		Windows::Storage::Streams::IDataWriter^ dataWriter = ref new Windows::Storage::Streams::DataWriter();
+		for (unsigned i = 0; i < blocksize; i++) {
+			for (unsigned j = 0; j < channels; j++) {
+				dataWriter->WriteByte((FLAC__byte)(data[j][i] & 0xFF));
+				dataWriter->WriteByte((FLAC__byte)((data[j][i] >> 8) & 0xFF));
+				dataWriter->WriteByte((FLAC__byte)((data[j][i] >> 16) & 0xFF));
+			}
+		}
+		return dataWriter->DetachBuffer();
+	}
 
-static inline unsigned int pack_sample_8(const int* const data[], unsigned blocksize, unsigned channels, FLAC__byte *buffer)
-{
-	unsigned k = 0;
-	for (unsigned i = 0; i < blocksize; i++) {
-		for (unsigned j = 0; j < channels; j++) {
-			buffer[k++] = (FLAC__byte)(data[j][i] + 0x80);
+	static inline Windows::Storage::Streams::IBuffer^ pack_sample_32(const int* const data[], unsigned blocksize, unsigned channels)
+	{
+		Windows::Storage::Streams::IDataWriter^ dataWriter = ref new Windows::Storage::Streams::DataWriter();
+		for (unsigned i = 0; i < blocksize; i++) {
+			for (unsigned j = 0; j < channels; j++) {
+				dataWriter->WriteByte((FLAC__byte)(data[j][i] & 0xFF));
+				dataWriter->WriteByte((FLAC__byte)((data[j][i] >> 8) & 0xFF));
+				dataWriter->WriteByte((FLAC__byte)((data[j][i] >> 16) & 0xFF));
+				dataWriter->WriteByte((FLAC__byte)((data[j][i] >> 24) & 0xFF));
+			}
+		}
+		return dataWriter->DetachBuffer();
+	}
+
+public:
+	static inline Windows::Storage::Streams::IBuffer^ pack_sample(const int* const data[], unsigned blocksize, unsigned channels, unsigned bits_per_sample)
+	{
+		switch (bits_per_sample) {
+		case 8:
+			return pack_sample_8(data, blocksize, channels);
+		case 16:
+			return pack_sample_16(data, blocksize, channels);
+		case 24:
+			return pack_sample_24(data, blocksize, channels);
+		case 32:
+			return pack_sample_32(data, blocksize, channels);
+		default:
+			throw ref new Platform::InvalidArgumentException("Invalid bits per sample count.");
 		}
 	}
-	return k;
-}
-
-static inline unsigned int pack_sample_16(const int* const data[], unsigned blocksize, unsigned channels, FLAC__byte *buffer)
-{
-	unsigned k = 0;
-	for (unsigned i = 0; i < blocksize; i++) {
-		for (unsigned j = 0; j < channels; j++) {
-			buffer[k++] = (FLAC__byte)(data[j][i] & 0xFF);
-			buffer[k++] = (FLAC__byte)((data[j][i] >> 8) & 0xFF);
-		}
-	}
-	return k;
-}
-
-static inline unsigned int pack_sample_24(const int* const data[], unsigned blocksize, unsigned channels, FLAC__byte *buffer)
-{
-	unsigned k = 0;
-	for (unsigned i = 0; i < blocksize; i++) {
-		for (unsigned j = 0; j < channels; j++) {
-			buffer[k++] = (FLAC__byte)(data[j][i] & 0xFF);
-			buffer[k++] = (FLAC__byte)((data[j][i] >> 8) & 0xFF);
-			buffer[k++] = (FLAC__byte)((data[j][i] >> 16) & 0xFF);
-		}
-	}
-	return k;
-}
-
-static inline unsigned int pack_sample_32(const int* const data[], unsigned blocksize, unsigned channels, FLAC__byte *buffer)
-{
-	unsigned k = 0;
-	for (unsigned i = 0; i < blocksize; i++) {
-		for (unsigned j = 0; j < channels; j++) {
-			buffer[k++] = (FLAC__byte)(data[j][i] & 0xFF);
-			buffer[k++] = (FLAC__byte)((data[j][i] >> 8) & 0xFF);
-			buffer[k++] = (FLAC__byte)((data[j][i] >> 16) & 0xFF);
-			buffer[k++] = (FLAC__byte)((data[j][i] >> 24) & 0xFF);
-		}
-	}
-	return k;
-}
-
-inline unsigned int pack_sample(const int* const data[], unsigned blocksize, unsigned channels, Windows::Storage::Streams::IBuffer^ buffer, unsigned bits_per_sample)
-{
-	if (buffer->Capacity < blocksize * channels * (bits_per_sample / 8))
-		throw ref new Platform::InvalidArgumentException("Buffer is too small.");
-
-	FLAC__byte *dest = nullptr;
-	HRESULT hr = get_underlying_array(buffer, &dest);
-	if (FAILED(hr)) throw Platform::Exception::CreateException(hr);
-
-	switch (bits_per_sample) {
-	case 8:
-		return pack_sample_8(data, blocksize, channels, dest);
-	case 16:
-		return pack_sample_16(data, blocksize, channels, dest);
-	case 24:
-		return pack_sample_24(data, blocksize, channels, dest);
-	case 32:
-		return pack_sample_32(data, blocksize, channels, dest);
-	default:
-		throw ref new Platform::InvalidArgumentException("Invalid bits per sample count.");
-	}
-}
-
-
-template<typename _Ty>
-static
-typename concurrency::details::_TaskTypeFromParam<_Ty>::_Type perform_synchronously(_Ty param)
-{
-	concurrency::task<typename concurrency::details::_TaskTypeFromParam<_Ty>::_Type> task = concurrency::create_task(param);
-	concurrency::event synchronizer;
-	task.then([&](typename concurrency::details::_TaskTypeFromParam<_Ty>::_Type) {
-		synchronizer.set();
-	}, concurrency::task_continuation_context::use_arbitrary());
-	synchronizer.wait();
-	return task.get();
-}
+};
 
 
 #endif

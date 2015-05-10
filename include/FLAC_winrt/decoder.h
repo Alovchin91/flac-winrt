@@ -1,5 +1,5 @@
 /* libFLAC_winrt - FLAC library for Windows Runtime
- * Copyright (C) 2014  Alexander Ovchinnikov
+ * Copyright (C) 2014-2015  Alexander Ovchinnikov
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,46 +32,46 @@
 #ifndef FLACRT__DECODER_H
 #define FLACRT__DECODER_H
 
-#include "FLAC_winrt/format.h"
 #include "FLAC/stream_decoder.h"
-#include "private/deferral.h"
+#include "FLAC_winrt/format.h"
+#include "FLAC_winrt/deferral.h"
 
 
 /** \file include/FLAC++/decoder.h
- *
- *  \brief
- *  This module contains the classes which implement the various
- *  decoders.
- *
- *  See the detailed documentation in the
- *  \link flacpp_decoder decoder \endlink module.
- */
+*
+*  \brief
+*  This module contains the classes which implement the various
+*  decoders.
+*
+*  See the detailed documentation in the
+*  \link flacpp_decoder decoder \endlink module.
+*/
 
 /** \defgroup flacpp_decoder FLAC++/decoder.h: decoder classes
- *  \ingroup flacpp
- *
- *  \brief
- *  This module describes the decoder layers provided by libFLAC++.
- *
- * The libFLAC++ decoder classes are object wrappers around their
- * counterparts in libFLAC.  All decoding layers available in
- * libFLAC are also provided here.  The interface is very similar;
- * make sure to read the \link flac_decoder libFLAC decoder module \endlink.
- *
- * There are only two significant differences here.  First, instead of
- * passing in C function pointers for callbacks, you inherit from the
- * decoder class and provide implementations for the callbacks in your
- * derived class; because of this there is no need for a 'client_data'
- * property.
- *
- * Second, there are two stream decoder classes.  FLAC::Decoder::Stream
- * is used for the same cases that FLAC__stream_decoder_init_stream() /
- * FLAC__stream_decoder_init_ogg_stream() are used, and FLAC::Decoder::File
- * is used for the same cases that
- * FLAC__stream_decoder_init_FILE() and FLAC__stream_decoder_init_file() /
- * FLAC__stream_decoder_init_ogg_FILE() and FLAC__stream_decoder_init_ogg_file()
- * are used.
- */
+*  \ingroup flacpp
+*
+*  \brief
+*  This module describes the decoder layers provided by libFLAC++.
+*
+* The libFLAC++ decoder classes are object wrappers around their
+* counterparts in libFLAC.  All decoding layers available in
+* libFLAC are also provided here.  The interface is very similar;
+* make sure to read the \link flac_decoder libFLAC decoder module \endlink.
+*
+* There are only two significant differences here.  First, instead of
+* passing in C function pointers for callbacks, you inherit from the
+* decoder class and provide implementations for the callbacks in your
+* derived class; because of this there is no need for a 'client_data'
+* property.
+*
+* Second, there are two stream decoder classes.  FLAC::Decoder::Stream
+* is used for the same cases that FLAC__stream_decoder_init_stream() /
+* FLAC__stream_decoder_init_ogg_stream() are used, and FLAC::Decoder::File
+* is used for the same cases that
+* FLAC__stream_decoder_init_FILE() and FLAC__stream_decoder_init_file() /
+* FLAC__stream_decoder_init_ogg_FILE() and FLAC__stream_decoder_init_ogg_file()
+* are used.
+*/
 
 namespace FLAC {
 
@@ -310,14 +310,16 @@ namespace FLAC {
 						return deferral_manager_.GetDeferral();
 					}
 
-					property Platform::Array<FLAC__byte>^ Buffer {
-						Platform::Array<FLAC__byte>^ get() {
-							return Platform::ArrayReference<FLAC__byte>(buffer_, *bytes_);
-						}
+					property size_t BufferSize {
+						size_t get() { return *bytes_; }
+						void set(size_t value) { *bytes_ = value; }
 					}
 
-					void SetResult(size_t bytes, StreamDecoderReadStatus result) {
-						*bytes_ = bytes;
+					Platform::Array<FLAC__byte>^ GetBuffer() {
+						return Platform::ArrayReference<FLAC__byte>(buffer_, *bytes_);
+					}
+
+					void SetResult(StreamDecoderReadStatus result) {
 						result_ = (::FLAC__StreamDecoderReadStatus)(int)result;
 						handled_ = true;
 					}
@@ -333,8 +335,12 @@ namespace FLAC {
 						}
 					}
 
-					Concurrency::task<void> WaitForDeferralsAsync() {
-						return deferral_manager_.SignalAndWaitAsync();
+					Platform::ArrayReference<FLAC__byte> GetArrayReference() {
+						return Platform::ArrayReference<FLAC__byte>(buffer_, *bytes_);
+					}
+
+					void WaitForDeferrals() {
+						deferral_manager_.SignalAndWait();
 					}
 
 				private:
@@ -383,6 +389,10 @@ namespace FLAC {
 				*/
 				public ref class StreamDecoderSeekEventArgs sealed {
 				public:
+					IDeferral^ GetDeferral() {
+						return deferral_manager_.GetDeferral();
+					}
+
 					property FLAC__uint64 AbsoluteByteOffset {
 						FLAC__uint64 get() { return absoluteByteOffset_; }
 					}
@@ -394,7 +404,7 @@ namespace FLAC {
 
 				internal:
 					StreamDecoderSeekEventArgs(const FLAC__uint64 &absoluteByteOffset)
-						: absoluteByteOffset_(absoluteByteOffset) { }
+						: absoluteByteOffset_(absoluteByteOffset), deferral_manager_(DeferralManager()) { }
 
 					property ::FLAC__StreamDecoderSeekStatus Result {
 						::FLAC__StreamDecoderSeekStatus get() {
@@ -403,7 +413,13 @@ namespace FLAC {
 						}
 					}
 
+					void WaitForDeferrals() {
+						deferral_manager_.SignalAndWait();
+					}
+
 				private:
+					DeferralManager deferral_manager_;
+
 					const FLAC__uint64 &absoluteByteOffset_;
 
 					bool handled_;
@@ -449,15 +465,22 @@ namespace FLAC {
 				*/
 				public ref class StreamDecoderTellEventArgs sealed {
 				public:
-					void SetResult(FLAC__uint64 absoluteByteOffset, StreamDecoderTellStatus result) {
-						*absoluteByteOffset_ = absoluteByteOffset;
+					IDeferral^ GetDeferral() {
+						return deferral_manager_.GetDeferral();
+					}
+
+					void SetAbsoluteByteOffset(FLAC__uint64 value) {
+						*absolute_byte_offset_ = value;
+					}
+
+					void SetResult(StreamDecoderTellStatus result) {
 						result_ = (::FLAC__StreamDecoderTellStatus)(int)result;
 						handled_ = true;
 					}
 
 				internal:
 					StreamDecoderTellEventArgs(FLAC__uint64 *absoluteByteOffset)
-						: absoluteByteOffset_(absoluteByteOffset) { }
+						: absolute_byte_offset_(absoluteByteOffset), deferral_manager_(DeferralManager()) { }
 
 					property ::FLAC__StreamDecoderTellStatus Result {
 						::FLAC__StreamDecoderTellStatus get() {
@@ -466,8 +489,14 @@ namespace FLAC {
 						}
 					}
 
+					void WaitForDeferrals() {
+						deferral_manager_.SignalAndWait();
+					}
+
 				private:
-					FLAC__uint64 *absoluteByteOffset_;
+					DeferralManager deferral_manager_;
+
+					FLAC__uint64 *absolute_byte_offset_;
 
 					bool handled_;
 					::FLAC__StreamDecoderTellStatus result_;
@@ -512,15 +541,22 @@ namespace FLAC {
 				*/
 				public ref class StreamDecoderLengthEventArgs sealed {
 				public:
-					void SetResult(FLAC__uint64 streamLength, StreamDecoderLengthStatus result) {
-						*streamLength_ = streamLength;
+					IDeferral^ GetDeferral() {
+						return deferral_manager_.GetDeferral();
+					}
+
+					void SetStreamLength(FLAC__uint64 value) {
+						*stream_length_ = value;
+					}
+
+					void SetResult(StreamDecoderLengthStatus result) {
 						result_ = (::FLAC__StreamDecoderLengthStatus)(int)result;
 						handled_ = true;
 					}
 
 				internal:
 					StreamDecoderLengthEventArgs(FLAC__uint64 *streamLength)
-						: streamLength_(streamLength) { }
+						: stream_length_(streamLength), deferral_manager_(DeferralManager()) { }
 
 					property ::FLAC__StreamDecoderLengthStatus Result {
 						::FLAC__StreamDecoderLengthStatus get() {
@@ -529,8 +565,14 @@ namespace FLAC {
 						}
 					}
 
+					void WaitForDeferrals() {
+						deferral_manager_.SignalAndWait();
+					}
+
 				private:
-					FLAC__uint64 *streamLength_;
+					DeferralManager deferral_manager_;
+
+					FLAC__uint64 *stream_length_;
 
 					bool handled_;
 					::FLAC__StreamDecoderLengthStatus result_;
@@ -564,13 +606,18 @@ namespace FLAC {
 				*/
 				public ref class StreamDecoderEofEventArgs sealed {
 				public:
+					IDeferral^ GetDeferral() {
+						return deferral_manager_.GetDeferral();
+					}
+
 					void SetResult(bool result) {
 						result_ = result ? TRUE : FALSE;
 						handled_ = true;
 					}
 
 				internal:
-					StreamDecoderEofEventArgs() { }
+					StreamDecoderEofEventArgs()
+						: deferral_manager_(DeferralManager()) { }
 
 					property ::FLAC__bool Result {
 						::FLAC__bool get() {
@@ -579,7 +626,13 @@ namespace FLAC {
 						}
 					}
 
+					void WaitForDeferrals() {
+						deferral_manager_.SignalAndWait();
+					}
+
 				private:
+					DeferralManager deferral_manager_;
+
 					bool handled_;
 					::FLAC__bool result_;
 				};
@@ -643,8 +696,8 @@ namespace FLAC {
 						}
 					}
 
-					Concurrency::task<void> WaitForDeferralsAsync() {
-						return deferral_manager_.SignalAndWaitAsync();
+					void WaitForDeferrals() {
+						deferral_manager_.SignalAndWait();
 					}
 
 				private:
@@ -735,24 +788,24 @@ namespace FLAC {
 
 
 			/** \ingroup flacpp_decoder
-			 *  \brief
-			 *  This class wraps the ::FLAC__StreamDecoder.  If you are
-			 *  decoding from a file, FLAC::Decoder::File may be more
-			 *  convenient.
-			 *
-			 * The usage of this class is similar to FLAC__StreamDecoder,
-			 * except instead of providing callbacks to
-			 * FLAC__stream_decoder_init*_stream(), you will inherit from this
-			 * class and override the virtual callback functions with your
-			 * own implementations, then call init() or init_ogg().  The rest
-			 * of the calls work the same as in the C layer.
-			 *
-			 * Only the read, write, and error callbacks are mandatory.  The
-			 * others are optional; this class provides default
-			 * implementations that do nothing.  In order for seeking to work
-			 * you must overide seek_callback(), tell_callback(),
-			 * length_callback(), and eof_callback().
-			 */
+			*  \brief
+			*  This class wraps the ::FLAC__StreamDecoder.  If you are
+			*  decoding from a file, FLAC::Decoder::File may be more
+			*  convenient.
+			*
+			* The usage of this class is similar to FLAC__StreamDecoder,
+			* except instead of providing callbacks to
+			* FLAC__stream_decoder_init*_stream(), you will inherit from this
+			* class and override the virtual callback functions with your
+			* own implementations, then call init() or init_ogg().  The rest
+			* of the calls work the same as in the C layer.
+			*
+			* Only the read, write, and error callbacks are mandatory.  The
+			* others are optional; this class provides default
+			* implementations that do nothing.  In order for seeking to work
+			* you must overide seek_callback(), tell_callback(),
+			* length_callback(), and eof_callback().
+			*/
 			public ref class StreamDecoder sealed {
 			public:
 				StreamDecoder();
@@ -828,7 +881,6 @@ namespace FLAC {
 			private:
 				::FLAC__StreamDecoder *decoder_;
 				Windows::Storage::Streams::IRandomAccessStream^ file_stream_;
-				Windows::Storage::Streams::DataReader^ file_reader_;
 
 				static ::FLAC__StreamDecoderReadStatus read_callback_(const ::FLAC__StreamDecoder *decoder, FLAC__byte buffer[], size_t *bytes, void *client_data);
 				static ::FLAC__StreamDecoderSeekStatus seek_callback_(const ::FLAC__StreamDecoder *decoder, FLAC__uint64 absolute_byte_offset, void *client_data);
@@ -840,9 +892,11 @@ namespace FLAC {
 				static void error_callback_(const ::FLAC__StreamDecoder *decoder, ::FLAC__StreamDecoderErrorStatus status, void *client_data);
 
 			private:
-				// Private and undefined so you can't use them:
-				StreamDecoder(const StreamDecoder^&);
-				void operator=(const StreamDecoder^&);
+				static inline void file_stream_read_(Windows::Storage::Streams::IRandomAccessStream^ file_stream, Callbacks::StreamDecoderReadEventArgs^ e);
+				static inline void file_stream_seek_(Windows::Storage::Streams::IRandomAccessStream^ file_stream, Callbacks::StreamDecoderSeekEventArgs^ e);
+				static inline void file_stream_tell_(Windows::Storage::Streams::IRandomAccessStream^ file_stream, Callbacks::StreamDecoderTellEventArgs^ e);
+				static inline void file_stream_length_(Windows::Storage::Streams::IRandomAccessStream^ file_stream, Callbacks::StreamDecoderLengthEventArgs^ e);
+				static inline void file_stream_eof_(Windows::Storage::Streams::IRandomAccessStream^ file_stream, Callbacks::StreamDecoderEofEventArgs^ e);
 			};
 		}
 	}
