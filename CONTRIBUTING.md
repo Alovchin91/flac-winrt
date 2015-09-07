@@ -20,8 +20,8 @@ If you want to contribute by writing some documentation for the project, please 
 
 Please consider following guidelines for the source code:
 
-* Root namespace is **libFLAC**.
-* Create namespaces to denote part of functionality: for example, libFLAC::Decoder, libFLAC::Format, etc.
+* Root namespace is **FLAC.WindowsRuntime**.
+* Create namespaces to denote part of functionality: for example, FLAC.WindowsRuntime.Decoder, FLAC.WindowsRuntime.Format, etc.
 * Use UpperCamelCase in the names of namespaces (except root namespace), classes and public methods and properties.
 * Use lowerCamelCase in the names of parameters and local variables.
 * Don't expose public fields. Provide properties with getters and setters instead.
