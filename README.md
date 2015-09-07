@@ -8,7 +8,7 @@ Currently, FLAC for Windows Runtime exposes only a decoder as this is what most 
 
 The recommended way to get FLAC for Windows Runtime package is to use NuGet: [FLAC.WindowsRuntime](https://www.nuget.org/packages/FLAC.WindowsRuntime/)
 
-You can also download the [latest release](../releases/latest) from this GitHub project.
+You can also download the [latest release](../../releases/latest) from this GitHub project.
 
 ## Sample usage
 
