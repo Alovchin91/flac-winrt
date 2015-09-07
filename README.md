@@ -4,6 +4,12 @@
 
 Currently, FLAC for Windows Runtime exposes only a decoder as this is what most developers would need in a Windows Store app. But as far as Windows Runtime matures and becomes a technology that is used in desktop development as well, FLAC for Windows Runtime will also update and add necessary functionality.
 
+## How to get
+
+The recommended way to get FLAC for Windows Runtime package is to use NuGet: [FLAC.WindowsRuntime](https://www.nuget.org/packages/FLAC.WindowsRuntime/)
+
+You can also download the [latest release](../releases/latest) from this GitHub project.
+
 ## Sample usage
 
 To decode a FLAC file stream, use `FLAC.WindowsRuntime.Decoder.StreamDecoder` class. Instantiate the class and then call `StreamDecoder.Init` to initialize the decoder. Use `Init()` overload to provide your own FLAC decoder callbacks implementation, or use `Init(IRandomAccessStream)` overload to rely on internal FLAC for Windows Runtime implementation.
